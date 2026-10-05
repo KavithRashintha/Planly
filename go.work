@@ -1,0 +1,10 @@
+go 1.27.1
+
+use (
+	./pkg
+	./services/agent
+	./services/auth
+	./services/gateway
+	./services/notify
+	./services/planner
+)

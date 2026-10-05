@@ -1,0 +1,149 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: planly-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - planly-net
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    container_name: planly-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    environment:
+      GATEWAY_PORT: 8080
+      JWT_SECRET: ${JWT_SECRET:-planly-development-secret-key-at-least-32-bytes-long!}
+      AUTH_SERVICE_URL: http://auth-svc:8081
+      PLANNER_SERVICE_URL: http://planner-svc:8082
+      NOTIFY_SERVICE_URL: http://notify-svc:8083
+      AGENT_SERVICE_URL: http://agent-svc:8084
+    depends_on:
+      - auth-svc
+      - planner-svc
+      - notify-svc
+      - agent-svc
+    networks:
+      - planly-net
+
+  auth-svc:
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    container_name: planly-auth-svc
+    restart: unless-stopped
+    ports:
+      - "${AUTH_SERVICE_PORT:-8081}:8081"
+    environment:
+      SERVICE_PORT: 8081
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: auth_db
+      JWT_SECRET: ${JWT_SECRET:-planly-development-secret-key-at-least-32-bytes-long!}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-planly-development-internal-key-change-me}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - planly-net
+
+  planner-svc:
+    build:
+      context: .
+      dockerfile: services/planner/Dockerfile
+    container_name: planly-planner-svc
+    restart: unless-stopped
+    ports:
+      - "${PLANNER_SERVICE_PORT:-8082}:8082"
+    environment:
+      SERVICE_PORT: 8082
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: planner_db
+      JWT_SECRET: ${JWT_SECRET:-planly-development-secret-key-at-least-32-bytes-long!}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-planly-development-internal-key-change-me}
+      NOTIFY_SERVICE_URL: http://notify-svc:8083
+      AUTH_SERVICE_URL: http://auth-svc:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - planly-net
+
+  notify-svc:
+    build:
+      context: .
+      dockerfile: services/notify/Dockerfile
+    container_name: planly-notify-svc
+    restart: unless-stopped
+    ports:
+      - "${NOTIFY_SERVICE_PORT:-8083}:8083"
+    environment:
+      SERVICE_PORT: 8083
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: notify_db
+      JWT_SECRET: ${JWT_SECRET:-planly-development-secret-key-at-least-32-bytes-long!}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-planly-development-internal-key-change-me}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - planly-net
+
+  agent-svc:
+    build:
+      context: .
+      dockerfile: services/agent/Dockerfile
+    container_name: planly-agent-svc
+    restart: unless-stopped
+    ports:
+      - "${AGENT_SERVICE_PORT:-8084}:8084"
+    environment:
+      SERVICE_PORT: 8084
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: agent_db
+      JWT_SECRET: ${JWT_SECRET:-planly-development-secret-key-at-least-32-bytes-long!}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-planly-development-internal-key-change-me}
+      PLANNER_SERVICE_URL: http://planner-svc:8082
+      NOTIFY_SERVICE_URL: http://notify-svc:8083
+      AUTH_SERVICE_URL: http://auth-svc:8081
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-claude-3-7-sonnet-20250219}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - planly-net
+
+volumes:
+  postgres_data:
+
+networks:
+  planly-net:
+    driver: bridge
