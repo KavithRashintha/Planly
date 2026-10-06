@@ -1,111 +1,155 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "tailwindcss";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  body {
+    font-family: var(--font-sans);
+    background-color: #191919;
+    color: #e3e2e0;
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
+    letter-spacing: -0.011em;
   }
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+/* Notion-style subtle scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
 }
 
-body {
-  margin: 0;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Notion Surface & Card Classes */
+.notion-sidebar {
+  background-color: #202020;
+  border-right: 1px solid #2a2a2a;
+}
+
+.notion-card {
+  background-color: #202020;
+  border: 1px solid #2e2e2e;
+  border-radius: 8px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.notion-card:hover {
+  background-color: #252525;
+  border-color: #383838;
+}
+
+.notion-input {
+  background-color: #242424;
+  border: 1px solid #333333;
+  color: #ebebeb;
+  border-radius: 6px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.notion-input:focus {
+  outline: none;
+  border-color: #2383e2;
+  box-shadow: 0 0 0 1px #2383e2;
+}
+
+.notion-button-primary {
+  background-color: #2383e2;
+  color: #ffffff;
+  border-radius: 6px;
   font-weight: 500;
-  color: var(--text-h);
+  transition: background-color 0.15s ease;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+.notion-button-primary:hover {
+  background-color: #1d72c5;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+.notion-button-subtle {
+  background-color: transparent;
+  color: #9b9b9b;
+  border-radius: 6px;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.notion-button-subtle:hover {
+  background-color: #2a2a2a;
+  color: #ebebeb;
+}
+
+/* FullCalendar Minimal Notion Theme */
+.fc {
+  --fc-page-bg-color: transparent;
+  --fc-border-color: #2b2b2b;
+  --fc-neutral-bg-color: #202020;
+  --fc-list-event-hover-bg-color: #292929;
+  --fc-today-bg-color: rgba(35, 131, 226, 0.05);
+  color: #d4d4d4;
+  font-family: inherit;
+  font-size: 0.825rem;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.1rem !important;
+  font-weight: 600;
+  color: #ebebeb;
+  letter-spacing: -0.01em;
+}
+
+.fc .fc-button {
+  background-color: #252525 !important;
+  border: 1px solid #333333 !important;
+  color: #a3a3a3 !important;
+  text-transform: capitalize;
+  font-size: 0.75rem !important;
+  font-weight: 500;
+  padding: 0.25rem 0.65rem !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+.fc .fc-button:hover {
+  background-color: #2f2f2f !important;
+  color: #ffffff !important;
+  border-color: #404040 !important;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background-color: #2e2e2e !important;
+  color: #ffffff !important;
+  border-color: #4a4a4a !important;
+}
+
+.fc-col-header-cell-cushion, .fc-daygrid-day-number {
+  color: #8c8c8c;
+  text-decoration: none !important;
+  font-size: 0.75rem;
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+  border: 1px solid #282828 !important;
+}
+
+.fc-timegrid-slot {
+  height: 2.25rem !important;
+}
+
+.fc-timegrid-slot-label-cushion {
+  color: #666666;
+  font-size: 0.7rem;
 }
