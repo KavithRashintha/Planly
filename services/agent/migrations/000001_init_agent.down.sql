@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS briefing_log;
+DROP TABLE IF EXISTS proposals;
+DROP TABLE IF EXISTS tool_calls;
+DROP TABLE IF EXISTS agent_runs;
+DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS conversations;
