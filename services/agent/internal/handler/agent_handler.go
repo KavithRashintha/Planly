@@ -230,6 +230,10 @@ func (h *AgentHandler) DeleteConversation(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := h.svc.DeleteConversation(r.Context(), userID, convID); err != nil {
+		if errors.Is(err, service.ErrConversationNotFound) {
+			httpx.WriteError(w, http.StatusNotFound, "not_found", "Conversation not found")
+			return
+		}
 		httpx.WriteError(w, http.StatusInternalServerError, "internal_error", "Failed to delete conversation")
 		return
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/planly/pkg/logx"
 	"github.com/planly/services/agent/internal/model"
 	"github.com/planly/services/agent/internal/repository"
 )
@@ -240,6 +241,7 @@ func (s *agentServiceImpl) runAgentLoop(
 		return nil, fmt.Errorf("failed to initialize agent run: %w", err)
 	}
 	runID := PgtypeToUUID(run.ID)
+	startTime := time.Now()
 
 	// 2. Build system prompt
 	sysPrompt := s.buildSystemPrompt(userCtx)
@@ -387,6 +389,15 @@ func (s *agentServiceImpl) runAgentLoop(
 	}
 
 	if loopErr != nil {
+		durationMs := time.Since(startTime).Milliseconds()
+		logx.FromContext(ctx).Error("agent run failed",
+			"run_id", runID.String(),
+			"user_id", userID.String(),
+			"trigger", trigger,
+			"iterations", iterations,
+			"duration_ms", durationMs,
+			"error", loopErr,
+		)
 		_, _ = s.repo.UpdateAgentRunStatus(ctx, repository.UpdateAgentRunStatusParams{
 			ID:           UUIDToPgtype(runID),
 			Status:       "failed",
@@ -450,6 +461,17 @@ func (s *agentServiceImpl) runAgentLoop(
 	}
 
 	// 8. Update run status to completed
+	durationMs := time.Since(startTime).Milliseconds()
+	logx.FromContext(ctx).Info("agent run completed",
+		"run_id", runID.String(),
+		"user_id", userID.String(),
+		"trigger", trigger,
+		"iterations", iterations,
+		"duration_ms", durationMs,
+		"input_tokens", totalInput,
+		"output_tokens", totalOutput,
+		"staged_proposals", len(proposalResponses),
+	)
 	_, _ = s.repo.UpdateAgentRunStatus(ctx, repository.UpdateAgentRunStatusParams{
 		ID:           UUIDToPgtype(runID),
 		Status:       "completed",

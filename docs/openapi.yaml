@@ -1,0 +1,1472 @@
+openapi: 3.0.3
+info:
+  title: Planly API
+  description: >
+    Planly is an intelligent, microservices-based daily planner and calendar system
+    featuring human-in-the-loop autonomous AI assistance, multi-persona support,
+    and granular time blocking.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Planly API Gateway
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              example: validation_error
+            message:
+              type: string
+              example: Invalid input parameters
+
+    UserPersona:
+      type: string
+      enum: [student, undergraduate, employee]
+      example: employee
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@planly.dev
+        password:
+          type: string
+          minLength: 8
+          example: securepass123
+        name:
+          type: string
+          example: Alex Mercer
+        persona:
+          $ref: '#/components/schemas/UserPersona'
+        timezone:
+          type: string
+          example: America/New_York
+        work_start:
+          type: string
+          example: "09:00"
+        work_end:
+          type: string
+          example: "17:00"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@planly.dev
+        password:
+          type: string
+          example: securepass123
+
+    AuthResponse:
+      type: object
+      required:
+        - access_token
+        - refresh_token
+        - user
+      properties:
+        access_token:
+          type: string
+          example: eyJhbGciOiJIUzI1Ni...
+        refresh_token:
+          type: string
+          example: d9b7a421-4...
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+
+    UserProfile:
+      type: object
+      required:
+        - id
+        - email
+        - name
+        - persona
+        - timezone
+        - work_start
+        - work_end
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        persona:
+          $ref: '#/components/schemas/UserPersona'
+        timezone:
+          type: string
+        work_start:
+          type: string
+        work_end:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        persona:
+          $ref: '#/components/schemas/UserPersona'
+        timezone:
+          type: string
+        work_start:
+          type: string
+        work_end:
+          type: string
+
+    Project:
+      type: object
+      required:
+        - id
+        - user_id
+        - name
+        - colour
+        - archived
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Product Launch
+        colour:
+          type: string
+          example: "#3b82f6"
+        archived:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+
+    CreateProjectRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: Product Launch
+        colour:
+          type: string
+          example: "#3b82f6"
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        colour:
+          type: string
+        archived:
+          type: boolean
+
+    Subtask:
+      type: object
+      required:
+        - id
+        - task_id
+        - title
+        - done
+        - position
+      properties:
+        id:
+          type: string
+          format: uuid
+        task_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        done:
+          type: boolean
+        position:
+          type: integer
+
+    CreateSubtaskRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+        position:
+          type: integer
+
+    UpdateSubtaskRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+        done:
+          type: boolean
+        position:
+          type: integer
+
+    Tag:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+
+    CreateTagRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    Task:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - priority
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+          nullable: true
+        title:
+          type: string
+          example: Prepare Release Checklist
+        description:
+          type: string
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 4
+          example: 1
+        status:
+          type: string
+          enum: [todo, in_progress, done]
+          example: todo
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+        estimate_minutes:
+          type: integer
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        subtasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subtask'
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+
+    CreateTaskRequest:
+      type: object
+      required:
+        - title
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 4
+          default: 2
+        status:
+          type: string
+          enum: [todo, in_progress, done]
+          default: todo
+        due_at:
+          type: string
+          format: date-time
+        estimate_minutes:
+          type: integer
+        tag_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: integer
+        status:
+          type: string
+          enum: [todo, in_progress, done]
+        due_at:
+          type: string
+          format: date-time
+        estimate_minutes:
+          type: integer
+        tag_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    TimeBlock:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - starts_at
+        - ends_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        task_id:
+          type: string
+          format: uuid
+          nullable: true
+        title:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+
+    CreateTimeBlockRequest:
+      type: object
+      required:
+        - title
+        - starts_at
+        - ends_at
+      properties:
+        task_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+
+    UpdateTimeBlockRequest:
+      type: object
+      properties:
+        task_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+
+    WorkloadResponse:
+      type: object
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        days:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+              planned_minutes:
+                type: integer
+              capacity_minutes:
+                type: integer
+              over_capacity:
+                type: boolean
+              task_count:
+                type: integer
+
+    DashboardResponse:
+      type: object
+      properties:
+        overdue:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        today:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        upcoming:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        workload:
+          $ref: '#/components/schemas/WorkloadResponse'
+
+    Reminder:
+      type: object
+      required:
+        - id
+        - user_id
+        - message
+        - remind_at
+        - fired
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        task_id:
+          type: string
+          format: uuid
+          nullable: true
+        message:
+          type: string
+        remind_at:
+          type: string
+          format: date-time
+        fired:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    CreateReminderRequest:
+      type: object
+      required:
+        - message
+        - remind_at
+      properties:
+        task_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+        remind_at:
+          type: string
+          format: date-time
+
+    Notification:
+      type: object
+      required:
+        - id
+        - user_id
+        - kind
+        - title
+        - body
+        - read
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [reminder, briefing, agent, system]
+        title:
+          type: string
+        body:
+          type: string
+        read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    UnreadCountResponse:
+      type: object
+      properties:
+        unread_count:
+          type: integer
+
+    AgentProposalAction:
+      type: object
+      required:
+        - id
+        - tool
+        - input
+        - status
+      properties:
+        id:
+          type: string
+        tool:
+          type: string
+        input:
+          type: object
+        status:
+          type: string
+          enum: [pending, applied, failed, skipped]
+        error:
+          type: string
+
+    AgentProposal:
+      type: object
+      required:
+        - id
+        - user_id
+        - summary
+        - actions
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        run_id:
+          type: string
+          format: uuid
+          nullable: true
+        summary:
+          type: string
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentProposalAction'
+        status:
+          type: string
+          enum: [pending, approved, rejected, partial, failed]
+        created_at:
+          type: string
+          format: date-time
+
+    AgentChatRequest:
+      type: object
+      required:
+        - message
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+
+    AgentChatResponse:
+      type: object
+      required:
+        - conversation_id
+        - message_id
+        - reply
+        - run_id
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+        message_id:
+          type: string
+          format: uuid
+        reply:
+          type: string
+        proposals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentProposal'
+        run_id:
+          type: string
+          format: uuid
+
+    PlanGoalRequest:
+      type: object
+      required:
+        - goal
+      properties:
+        goal:
+          type: string
+          example: Prepare semester presentation
+        deadline:
+          type: string
+          format: date-time
+        project_id:
+          type: string
+          format: uuid
+
+    RescheduleRequest:
+      type: object
+      properties:
+        mode:
+          type: string
+          example: overdue
+
+paths:
+  # ----------------- Authentication -----------------
+  /auth/register:
+    post:
+      summary: Register a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Validation error
+        '409':
+          description: Email already registered
+
+  /auth/login:
+    post:
+      summary: Authenticate with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid email or password
+
+  /auth/refresh:
+    post:
+      summary: Exchange refresh token for fresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Revoked or expired refresh token
+
+  /auth/me:
+    get:
+      summary: Get current authenticated user profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+    put:
+      summary: Update user settings, persona, and work hours
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+  # ----------------- Planner: Projects -----------------
+  /projects:
+    get:
+      summary: List user projects
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+    post:
+      summary: Create a project
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+  /projects/{id}:
+    get:
+      summary: Get project by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+    put:
+      summary: Update project
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+    delete:
+      summary: Delete project
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Project deleted
+
+  # ----------------- Planner: Tasks -----------------
+  /tasks:
+    get:
+      summary: List and filter tasks
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [todo, in_progress, done]
+        - name: priority
+          in: query
+          schema:
+            type: integer
+        - name: project_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: q
+          in: query
+          description: Search term in title/description
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+    post:
+      summary: Create a new task
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  /tasks/{id}:
+    get:
+      summary: Get task details including subtasks and tags
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+    put:
+      summary: Update task
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+    delete:
+      summary: Delete task
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Task deleted
+
+  /tasks/{id}/subtasks:
+    post:
+      summary: Add subtask to task
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubtaskRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subtask'
+
+  /subtasks/{id}:
+    put:
+      summary: Update or toggle subtask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubtaskRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subtask'
+    delete:
+      summary: Delete subtask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Subtask deleted
+
+  /tags:
+    get:
+      summary: List user tags
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+    post:
+      summary: Create tag
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTagRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+
+  # ----------------- Planner: Time Blocks & Workload -----------------
+  /time-blocks:
+    get:
+      summary: List calendar time blocks within date range
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeBlock'
+    post:
+      summary: Create calendar time block (rejects overlaps with 409)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTimeBlockRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeBlock'
+        '409':
+          description: Overlapping time block conflict
+
+  /time-blocks/{id}:
+    get:
+      summary: Get time block by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeBlock'
+    put:
+      summary: Update time block
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTimeBlockRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeBlock'
+        '409':
+          description: Overlapping time block conflict
+    delete:
+      summary: Delete time block
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Time block deleted
+
+  /workload:
+    get:
+      summary: Calculate daily planned minutes vs capacity
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "2026-10-07"
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "2026-10-14"
+        - name: capacity
+          in: query
+          schema:
+            type: integer
+            default: 480
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkloadResponse'
+
+  /dashboard:
+    get:
+      summary: Retrieve combined dashboard payload (overdue, today, upcoming, workload)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+
+  # ----------------- Notifications -----------------
+  /reminders:
+    post:
+      summary: Schedule task or calendar reminder
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReminderRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reminder'
+
+  /notifications:
+    get:
+      summary: List user notification inbox
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+
+  /notifications/{id}/read:
+    post:
+      summary: Mark notification as read
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+
+  /notifications/unread-count:
+    get:
+      summary: Get total unread notifications count
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadCountResponse'
+
+  # ----------------- AI Assistant / Agent -----------------
+  /agent/chat:
+    post:
+      summary: Send message to assistant and execute multi-turn loop
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentChatRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentChatResponse'
+        '429':
+          description: Daily message limit exceeded
+
+  /agent/conversations:
+    get:
+      summary: List agent conversation sessions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    title:
+                      type: string
+                    created_at:
+                      type: string
+                      format: date-time
+
+  /agent/conversations/{id}:
+    get:
+      summary: Retrieve full conversation message history
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conversation detail with messages
+    delete:
+      summary: Delete conversation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Conversation deleted
+
+  /agent/plan-goal:
+    post:
+      summary: Trigger dedicated plan-goal breakdown flow
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanGoalRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentChatResponse'
+
+  /agent/reschedule:
+    post:
+      summary: Trigger automatic rescheduling for overdue tasks
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RescheduleRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentChatResponse'
+
+  /agent/proposals:
+    get:
+      summary: List staged human-in-the-loop proposals
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentProposal'
+
+  /agent/proposals/{id}/approve:
+    post:
+      summary: Approve proposal and execute planned actions against planner service
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentProposal'
+        '409':
+          description: Proposal has already been decided
+
+  /agent/proposals/{id}/reject:
+    post:
+      summary: Reject proposal without making any changes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentProposal'
+        '409':
+          description: Proposal has already been decided
+
+  /agent/runs/{id}:
+    get:
+      summary: Inspect agent run execution trace, iterations, and tool calls
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Agent run details with tool call history
