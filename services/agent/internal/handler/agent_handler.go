@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -309,7 +311,7 @@ func (h *AgentHandler) ApproveProposal(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req model.ApproveProposalRequest
-	if err := httpx.ReadJSON(r, &req); err != nil && err.Error() != "EOF" {
+	if err := httpx.ReadJSON(r, &req); err != nil && !errors.Is(err, io.EOF) && !strings.Contains(err.Error(), "EOF") {
 		httpx.WriteError(w, http.StatusBadRequest, "invalid_request", err.Error())
 		return
 	}

@@ -328,10 +328,11 @@ func (s *agentServiceImpl) runAgentLoop(
 		}
 		for _, tc := range llmResp.ToolCalls {
 			assistantBlocks = append(assistantBlocks, LLMContentBlock{
-				Type:  "tool_use",
-				ID:    tc.ID,
-				Name:  tc.Name,
-				Input: tc.Input,
+				Type:             "tool_use",
+				ID:               tc.ID,
+				Name:             tc.Name,
+				Input:            tc.Input,
+				ThoughtSignature: tc.ThoughtSignature,
 			})
 		}
 		history = append(history, LLMMessage{
@@ -373,6 +374,7 @@ func (s *agentServiceImpl) runAgentLoop(
 			userResultBlocks = append(userResultBlocks, LLMContentBlock{
 				Type:       "tool_result",
 				ToolUseID:  tc.ID,
+				Name:       tc.Name,
 				Content:    string(outBytes),
 				IsError:    isErr,
 			})
@@ -488,19 +490,35 @@ func (s *agentServiceImpl) buildSystemPrompt(userCtx *model.UserContext) string 
 		}
 	}
 
-	return fmt.Sprintf(`You are Planly, an intelligent AI work planning and scheduling assistant.
-The user is a %s.
-User timezone: %s.
-Working hours: %s to %s.
-Current UTC time: %s.
+	return fmt.Sprintf(`You are Planly, an AI work planning assistant. You help users manage tasks, projects, and schedules.
 
-Rules and Safety:
-1. Always use available read tools (list_tasks, get_task, list_projects, list_time_blocks, get_workload) to inspect the current state before giving scheduling advice.
-2. Never invent task IDs or project IDs. Only use real UUIDs returned by tools.
-3. To change, create, reschedule, or delete tasks or time blocks, ALWAYS use write tools (create_task, update_task, delete_task, create_time_block, reschedule_tasks).
-4. Write tools stage proposals for user review; they do not apply immediately. Explain what you have proposed clearly.
-5. Provide clear, concise, structured responses.`, persona, timezone, workStart, workEnd, nowUTC)
+CONTEXT:
+- User type: %s
+- User timezone: %s
+- Working hours: %s to %s
+- Current UTC time: %s
+
+CRITICAL RULES — FOLLOW THESE EXACTLY:
+1. NEVER respond with greetings, introductions, or filler like "Hi, I am Planly..." when the user is asking you to DO something.
+2. When the user asks you to create, add, list, update, delete, or reschedule anything — IMMEDIATELY call the appropriate tool. Do not ask for confirmation first.
+3. For CREATE actions: use create_task or create_time_block tools immediately.
+4. For LIST actions: call list_tasks or list_projects immediately, then summarize what you found.
+5. For UPDATE/RESCHEDULE actions: first call get_task or list_tasks to find the item, then call the update tool.
+6. Write tools (create_task, update_task, delete_task, create_time_block, reschedule_tasks) stage a proposal for user approval — they do NOT apply changes immediately. After calling a write tool, briefly explain what you proposed.
+7. NEVER invent task IDs or project IDs — only use real UUIDs from tool responses.
+8. Always prefer using tools over explaining what you would do.
+
+TOOL USAGE DECISION TREE:
+- User says "add/create a task" → call create_task immediately
+- User says "show/list my tasks" → call list_tasks immediately
+- User says "reschedule/move a task" → call list_tasks first to find it, then reschedule_tasks
+- User asks about workload → call get_workload
+- User asks about projects → call list_projects
+- Any other action request → pick the most relevant tool and call it
+
+Keep responses concise and action-focused.`, persona, timezone, workStart, workEnd, nowUTC)
 }
+
 
 // ----------------- Proposal Approvals & Rejections -----------------
 

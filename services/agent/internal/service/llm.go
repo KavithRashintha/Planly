@@ -25,14 +25,15 @@ const (
 )
 
 type LLMContentBlock struct {
-	Type      string          `json:"type"` // text | tool_use | tool_result
-	Text      string          `json:"text,omitempty"`
-	ID        string          `json:"id,omitempty"`           // for tool_use
-	Name      string          `json:"name,omitempty"`         // for tool_use
-	Input     json.RawMessage `json:"input,omitempty"`        // for tool_use
-	ToolUseID string          `json:"tool_use_id,omitempty"` // for tool_result
-	Content   string          `json:"content,omitempty"`     // for tool_result
-	IsError   bool            `json:"is_error,omitempty"`    // for tool_result
+	Type             string          `json:"type"` // text | tool_use | tool_result
+	Text             string          `json:"text,omitempty"`
+	ID               string          `json:"id,omitempty"`                // for tool_use
+	Name             string          `json:"name,omitempty"`              // for tool_use
+	Input            json.RawMessage `json:"input,omitempty"`             // for tool_use
+	ThoughtSignature string          `json:"thought_signature,omitempty"` // for thinking models (e.g. Gemini)
+	ToolUseID        string          `json:"tool_use_id,omitempty"`      // for tool_result
+	Content          string          `json:"content,omitempty"`          // for tool_result
+	IsError          bool            `json:"is_error,omitempty"`         // for tool_result
 }
 
 type LLMMessage struct {
@@ -54,9 +55,10 @@ type LLMRequest struct {
 }
 
 type LLMToolCall struct {
-	ID    string          `json:"id"`
-	Name  string          `json:"name"`
-	Input json.RawMessage `json:"input"`
+	ID               string          `json:"id"`
+	Name             string          `json:"name"`
+	Input            json.RawMessage `json:"input"`
+	ThoughtSignature string          `json:"thought_signature,omitempty"`
 }
 
 type LLMResponse struct {

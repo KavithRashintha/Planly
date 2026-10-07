@@ -23,16 +23,21 @@ import (
 )
 
 type Config struct {
-	Port                   int        `envconfig:"SERVICE_PORT" default:"8084"`
-	JWTSecret              string     `envconfig:"JWT_SECRET" required:"true"`
-	InternalKey            string     `envconfig:"INTERNAL_API_KEY" required:"true"`
-	PlannerServiceURL      string     `envconfig:"PLANNER_SERVICE_URL" default:"http://planner-svc:8082"`
-	NotifyServiceURL       string     `envconfig:"NOTIFY_SERVICE_URL" default:"http://notify-svc:8083"`
-	AuthServiceURL         string     `envconfig:"AUTH_SERVICE_URL" default:"http://auth-svc:8081"`
-	AnthropicAPIKey        string     `envconfig:"ANTHROPIC_API_KEY"`
-	LLMModel               string     `envconfig:"LLM_MODEL" default:"claude-3-5-sonnet-20241022"`
-	DailyMessageCap        int64      `envconfig:"DAILY_MESSAGE_CAP" default:"50"`
-	BriefingIntervalMinute int        `envconfig:"BRIEFING_INTERVAL_MINUTES" default:"5"`
+	Port                   int    `envconfig:"SERVICE_PORT" default:"8084"`
+	JWTSecret              string `envconfig:"JWT_SECRET" required:"true"`
+	InternalKey            string `envconfig:"INTERNAL_API_KEY" required:"true"`
+	PlannerServiceURL      string `envconfig:"PLANNER_SERVICE_URL" default:"http://planner-svc:8082"`
+	NotifyServiceURL       string `envconfig:"NOTIFY_SERVICE_URL" default:"http://notify-svc:8083"`
+	AuthServiceURL         string `envconfig:"AUTH_SERVICE_URL" default:"http://auth-svc:8081"`
+	// LLM providers — Anthropic > Gemini > Ollama (local, no key required)
+	AnthropicAPIKey        string `envconfig:"ANTHROPIC_API_KEY"`
+	AnthropicModel         string `envconfig:"ANTHROPIC_MODEL" default:"claude-3-5-sonnet-20241022"`
+	GeminiAPIKey           string `envconfig:"GEMINI_API_KEY"`
+	GeminiModel            string `envconfig:"GEMINI_MODEL" default:"gemini-3.5-flash-lite"`
+	OllamaURL              string `envconfig:"OLLAMA_URL" default:"http://ollama:11434"`
+	OllamaModel            string `envconfig:"OLLAMA_MODEL" default:"qwen2.5:7b"`
+	DailyMessageCap        int64  `envconfig:"DAILY_MESSAGE_CAP" default:"50"`
+	BriefingIntervalMinute int    `envconfig:"BRIEFING_INTERVAL_MINUTES" default:"5"`
 	DB                     dbx.Config
 }
 
@@ -62,16 +67,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Initialize LLM Client
+	// Initialize LLM Client — priority: Anthropic > Gemini > Ollama (local, no key)
 	var llmClient service.LLMClient
-	if cfg.AnthropicAPIKey != "" {
-		slog.Info("using Anthropic LLM provider", "model", cfg.LLMModel)
-		llmClient = service.NewAnthropicClient(cfg.AnthropicAPIKey, cfg.LLMModel)
-	} else {
-		slog.Warn("ANTHROPIC_API_KEY is not set; falling back to FakeLLM mock")
-		fake := service.NewFakeLLM()
-		fake.DefaultReply = "Hello! I am Planly, your AI assistant. Anthropic API key is not yet configured, but I am standing by to assist with your schedules."
-		llmClient = fake
+	switch {
+	case cfg.AnthropicAPIKey != "":
+		slog.Info("using Anthropic LLM provider", "model", cfg.AnthropicModel)
+		llmClient = service.NewAnthropicClient(cfg.AnthropicAPIKey, cfg.AnthropicModel)
+	case cfg.GeminiAPIKey != "":
+		slog.Info("using Gemini LLM provider", "model", cfg.GeminiModel)
+		llmClient = service.NewGeminiClient(cfg.GeminiAPIKey, cfg.GeminiModel)
+	default:
+		slog.Info("using Ollama LLM provider (local, no API key required)", "url", cfg.OllamaURL, "model", cfg.OllamaModel)
+		llmClient = service.NewOllamaClient(cfg.OllamaURL, cfg.OllamaModel)
 	}
 
 	// Initialize Planner Client
@@ -128,9 +135,9 @@ func main() {
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
 		Handler:      r,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 60 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 120 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
 	stop := make(chan os.Signal, 1)

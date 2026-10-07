@@ -88,6 +88,17 @@ export const Login: React.FC = () => {
             >
               {loading ? 'Continuing...' : 'Continue'}
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('demo@planly.dev');
+                setPassword('Password123!');
+              }}
+              className="w-full bg-[#232323] hover:bg-[#2b2b2b] text-[#9b9b9b] hover:text-[#e6e6e6] py-1.5 rounded text-[11px] font-medium border border-[#303030] transition-colors cursor-pointer"
+            >
+              Fill Demo Credentials
+            </button>
           </form>
 
           <div className="mt-5 pt-4 border-t border-[#2b2b2b] text-center">
