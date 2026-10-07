@@ -14,6 +14,7 @@ import { Projects } from './pages/Projects';
 import { CalendarPage } from './pages/CalendarPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { Assistant } from './pages/Assistant';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +46,7 @@ export default function App() {
             >
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="assistant" element={<Assistant />} />
               <Route path="tasks" element={<Tasks />} />
               <Route path="projects" element={<Projects />} />
               <Route path="calendar" element={<CalendarPage />} />

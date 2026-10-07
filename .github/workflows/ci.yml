@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, Developer]
+  pull_request:
+    branches: [main, master, Developer]
+
+jobs:
+  backend:
+    name: Backend (Go Lint & Test)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          check-latest: true
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Initialize PostgreSQL Databases
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for db in auth_db planner_db notify_db agent_db; do
+            psql -h localhost -U postgres -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = '$db'" | grep -q 1 || \
+            psql -h localhost -U postgres -d postgres -c "CREATE DATABASE $db;"
+          done
+
+      - name: Verify Go Workspace & Modules
+        run: |
+          go work sync
+
+      - name: Go Vet / Lint
+        run: |
+          make lint
+
+      - name: Run Backend Tests
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          JWT_SECRET: ci-test-secret-at-least-32-bytes-long!
+          INTERNAL_KEY: ci-internal-key-for-tests
+        run: |
+          make test
+
+  frontend:
+    name: Frontend (Web Lint, Test & Build)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint Frontend
+        run: npm run lint
+
+      - name: Run Frontend Tests
+        run: npm test
+
+      - name: Build Frontend Bundle
+        run: npm run build

@@ -120,3 +120,83 @@ export interface DashboardMetrics {
   overdue_tasks: number;
   today_tasks: number;
 }
+
+// ----------------- Agent Models -----------------
+
+export interface Conversation {
+  id: string;
+  user_id: string;
+  title: string;
+  created_at: string;
+}
+
+export interface MessageContentBlock {
+  type: 'text' | 'tool_use' | 'tool_result';
+  text?: string;
+  id?: string;
+  name?: string;
+  input?: any;
+  tool_use_id?: string;
+  content?: string;
+  is_error?: boolean;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  role: 'user' | 'assistant';
+  content: MessageContentBlock[] | string;
+  created_at: string;
+}
+
+export interface ProposalAction {
+  id: string;
+  tool: string;
+  input: any;
+  status: 'pending' | 'applied' | 'failed' | 'skipped';
+  error?: string;
+}
+
+export interface Proposal {
+  id: string;
+  user_id: string;
+  run_id?: string | null;
+  summary: string;
+  actions: ProposalAction[];
+  status: 'pending' | 'approved' | 'rejected' | 'partial' | 'failed';
+  created_at: string;
+  decided_at?: string | null;
+}
+
+export interface ChatResponse {
+  conversation_id: string;
+  message_id: string;
+  reply: string;
+  proposals?: Proposal[];
+  run_id: string;
+}
+
+export interface ToolCall {
+  id: string;
+  run_id: string;
+  tool_name: string;
+  input: any;
+  output?: any;
+  is_error: boolean;
+  created_at: string;
+}
+
+export interface AgentRun {
+  id: string;
+  conversation_id?: string | null;
+  user_id: string;
+  trigger: 'chat' | 'briefing' | 'plan_goal' | 'reschedule';
+  status: 'running' | 'completed' | 'failed';
+  iterations: number;
+  input_tokens: number;
+  output_tokens: number;
+  error?: string | null;
+  created_at: string;
+  tool_calls?: ToolCall[];
+}
+

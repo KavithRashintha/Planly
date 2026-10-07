@@ -8,7 +8,8 @@ import {
   Inbox, 
   Settings, 
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -27,6 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ unreadCount = 0 }) => {
 
   const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: Home },
+    { to: '/assistant', label: 'AI Assistant', icon: Sparkles },
     { to: '/tasks', label: 'Tasks', icon: CheckSquare },
     { to: '/projects', label: 'Projects', icon: Folder },
     { to: '/calendar', label: 'Calendar', icon: CalendarIcon },

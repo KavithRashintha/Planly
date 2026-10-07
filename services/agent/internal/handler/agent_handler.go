@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -228,6 +230,10 @@ func (h *AgentHandler) DeleteConversation(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := h.svc.DeleteConversation(r.Context(), userID, convID); err != nil {
+		if errors.Is(err, service.ErrConversationNotFound) {
+			httpx.WriteError(w, http.StatusNotFound, "not_found", "Conversation not found")
+			return
+		}
 		httpx.WriteError(w, http.StatusInternalServerError, "internal_error", "Failed to delete conversation")
 		return
 	}
@@ -309,7 +315,7 @@ func (h *AgentHandler) ApproveProposal(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req model.ApproveProposalRequest
-	if err := httpx.ReadJSON(r, &req); err != nil && err.Error() != "EOF" {
+	if err := httpx.ReadJSON(r, &req); err != nil && !errors.Is(err, io.EOF) && !strings.Contains(err.Error(), "EOF") {
 		httpx.WriteError(w, http.StatusBadRequest, "invalid_request", err.Error())
 		return
 	}
