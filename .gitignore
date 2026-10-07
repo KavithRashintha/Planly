@@ -40,3 +40,7 @@ yarn-error.log*
 # Database / Docker volumes
 pgdata/
 
+# Planning & Tasks
+PLAN.md
+docs/PLAN.md
+
